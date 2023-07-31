@@ -13,6 +13,17 @@ button {
     padding: 1rem;
 }
 
+button.btnBack {
+    position: fixed;
+    top: 0.5vh;
+    left: 0.5vh;
+    min-width: unset;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    line-height:0.8rem;
+}
+
 
 * {
     margin-bottom: 0.8rem;

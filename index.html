@@ -8,11 +8,15 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>        
-        <script src="" async defer></script>
         <center>
             <h1>Mini Tools</h1>
 
-            <a href="beeper/beeper.html">Beeper</a>
+            <button onclick="link( 'beeper/beeper.html' )">Beeper</button>
         </center>
+        <script async defer>
+            function link( url ) {
+                window.open( url );
+            }
+        </script>
     </body>
 </html>
