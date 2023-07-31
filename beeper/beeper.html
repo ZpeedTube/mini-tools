@@ -5,7 +5,7 @@
         <title>Beeper</title>
         <meta name="description" content="A timer that keeps beeping at given interval.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="/style.css">
+        <link rel="stylesheet" href="../style.css">
         <style>
             button {
                 background-color: #334;
@@ -64,18 +64,18 @@
 
             <h3>Sounds</h3>
 
-            <button class="sfx" onclick="setAudioSrc('/soundfx/alarm1.mp3')"> Alarm 1 </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/alarm2.mp3')"> Alarm 2 </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/beep1.mp3')"> Beep </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/bling1.mp3')"> Bling </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/cannon1.mp3')"> Cannon </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/chime3.mp3')"> Chime 3 </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/chime5.mp3')"> Chime 5 </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/fanfare1.mp3')"> Fanfare 1 </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/fanfare2.mp3')"> Fanfare 2 </button><br>
-            <button class="sfx" onclick="setAudioSrc('/soundfx/throw4.mp3')"> Throw </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/alarm1.mp3')"> Alarm 1 </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/alarm2.mp3')"> Alarm 2 </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/beep1.mp3')"> Beep </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/bling1.mp3')"> Bling </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/cannon1.mp3')"> Cannon </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/chime3.mp3')"> Chime 3 </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/chime5.mp3')"> Chime 5 </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/fanfare1.mp3')"> Fanfare 1 </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/fanfare2.mp3')"> Fanfare 2 </button><br>
+            <button class="sfx" onclick="setAudioSrc('../soundfx/throw4.mp3')"> Throw </button><br>
 
-            <div class="label">Custom audio</div> <input type="input" id="inputAudioSrc" value="/soundfx/beep1.mp3" /> <div class="label type"></div><br>
+            <div class="label">Custom audio</div> <input type="input" id="inputAudioSrc" value="../soundfx/beep1.mp3" /> <div class="label type"></div><br>
             <button class="sfx" onclick="setAudioSrc()"> Custom </button><br>
 
             <script>
@@ -84,7 +84,7 @@
                 const inputAudioSrc = document.getElementById('inputAudioSrc');
                 const display = document.getElementById('display');
                 const btn2 = document.getElementById('btnBeepInterval');
-                let audioSrc = '/soundfx/beep1.mp3';
+                let audioSrc = '../soundfx/beep1.mp3';
                 let lastAudioSrc = audio.src;
 
                 function playSound () {
