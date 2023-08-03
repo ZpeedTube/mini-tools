@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Cooking Timer</title>
+        <meta name="description" content="A timer that keeps beeping at given interval.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="../style.css">
+        <link rel="stylesheet" href="cooking_timer.css">
+        <script src="../cookies.js"></script>
+    </head>
+    <body>
+        <button class="btnBack" onclick="link( '../index.html' )">&#60;</button>
+        <center>
+            <h2>Cooking Timer</h2>
+            
+            <audio id="audio1" >
+            </audio>
+            <audio id="audio2" >
+            </audio>
+            
+            <input type="number" id="inputMinutes" value="14" min="0" step="1" /> <div class="label type">min</div>
+            <input type="number" id="inputSeconds" value="0" min="0" max="59.99" step="1" /> <div class="label type">sec</div>
+            <br>
+            
+            <div id="oven">
+                <div class="oven-btn" onclick="decreaseTimer( 1 )">-</div><div class="display" id="display1">00:00</div><div class="oven-btn" onclick="increaseTimer( 1 )">+</div><br>
+                <div class="oven-btn" onclick="decreaseTimer( 0 )">-</div><div class="display" id="display0">00:00</div><div class="oven-btn" onclick="increaseTimer( 0 )">+</div>
+            </div>
+            
+            <button id="btnBeepInterval" onclick="addTimer()"> Start </button><br><br>
+            <button onclick="playAlarm()"> Alarm test </button>
+
+            <h3>Sounds</h3>
+
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/alarm1.mp3')"> Alarm 1 </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/alarm2.mp3')"> Alarm 2 </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/beep1.mp3')"> Beep </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/bling1.mp3')"> Bling </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/cannon1.mp3')"> Cannon </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/chime3.mp3')"> Chime 3 </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/chime5.mp3')"> Chime 5 </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/fanfare1.mp3')"> Fanfare 1 </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/fanfare2.mp3')"> Fanfare 2 </button><br>
+            <button class="sfx" onclick="setAlarmSrc('../soundfx/throw4.mp3')"> Throw </button><br>
+
+        </center>
+
+        <div class="cookie">
+            Settings for this app is saved in your cookies for 30 days.<br>
+            Reason for this is to keep timer going if you accidentally refresh the browser.<br>
+            <button onclick="setCookieAllowed()">Allow</button>
+        </div>
+        
+        <script>
+            const audioAlarm = document.getElementById('audio1');
+            const audioSfx = document.getElementById('audio2');
+            const inputMinutes = document.getElementById('inputMinutes');
+            const inputSeconds = document.getElementById('inputSeconds');
+            const inputAudioSrc = document.getElementById('inputAudioSrc');
+            const display0 = document.getElementById('display0');
+            const display1 = document.getElementById('display1');
+            const displays = [ display0, display1 ];
+            const btn2 = document.getElementById('btnBeepInterval');
+            let audioSrc = '../soundfx/beep1.mp3';
+            let lastAudioSrc = audioAlarm.src;
+            const CLICK_AUDIO = '../soundfx/beep6.mp3';
+            const ERROR_AUDIO = '../soundfx/error1.mp3';
+
+            window.onload = function () {
+                console.log( 'isCookieAllowed', isCookieAllowed() );
+                if ( !isCookieAllowed() ) {                        
+                    document.body.getElementsByClassName( 'cookie' )[ 0 ].style.display = 'block';
+                }
+                else {
+                    if ( checkCookie( 'timer0' ) ) {
+                        const endTime = parseInt( getCookie( 'timer0' ) );
+                        const calculatedTotalTime = endTime - Date.now();
+                        if ( calculatedTotalTime > 0 ) {
+                            const newTimer = new Timer( calculatedTotalTime );
+                            timers.push( newTimer );
+                        }
+                    }
+                    if ( checkCookie( 'timer1' ) ) {
+                        const endTime = parseInt( getCookie( 'timer1' ) );
+                        const calculatedTotalTime = endTime - Date.now();
+                        if ( calculatedTotalTime > 0 ) {
+                            const newTimer = new Timer( calculatedTotalTime );
+                            timers.push( newTimer );
+                        }
+                    }
+                    if ( checkCookie( 'alarm-src' ) ) {
+                        setAlarmSrc( getCookie( 'alarm-src' ) );
+                    }
+                    if ( checkCookie( 'input-minutes' ) ) {
+                        inputMinutes.value = getCookie( 'input-minutes' );
+                    }
+                    if ( checkCookie( 'input-seconds' ) ) {
+                        inputSeconds.value = getCookie( 'input-seconds' );
+                    }
+                }
+            }
+
+            function playAlarm () {
+                if ( !audioAlarm.src || audioAlarm.src !== lastAudioSrc ) {
+                    audioAlarm.src = audioSrc;
+                    lastAudioSrc = audioAlarm.src;
+                    console.log( 'audioAlarm.src', audioAlarm.src );
+                }
+                try {
+                    audioAlarm.pause();
+                    audioAlarm.currentTime = 0;
+                    audioAlarm.play();
+                }
+                catch( e ) {
+                    console.error( 'Failed to play audio1', e );
+                }
+            }
+
+            function playAudioSfx ( src ) {
+                if ( src ) {
+                    audioSfx.src = src;
+                }
+                try {
+                    audioSfx.pause();
+                    audioSfx.currentTime = 0;
+                    audioSfx.play();
+                }
+                catch( e ) {
+                    console.error( 'Failed to play audioSfx', e );
+                }
+            }
+
+            let timers = [];
+            let timerDecrement = 100; // milliseconds
+
+            let intervalDisplays = setInterval( () => {
+                const maxCount = timers.length < 2 ? timers.length : 2;
+                for( var i = 0; i < timers.length; i++ ) {
+                    if ( i === 0 ) {
+                        setCookie( "timer0", timers[ i ].endTime, 30 );
+                        if ( timers[ i ].getTimeLeft() <= 0 ) {
+                            display0.style.color = 'red';
+                            display0.innerHTML = '00:00';
+                        }
+                        else if ( timers[ i ].getTimeLeft() < 60 ) {
+                            display0.style.color = 'yellow';
+                            display0.innerHTML = displayFormat( timers[ i ].getTimeLeft() );
+                        }
+                        else {
+                            display0.style.color = 'white';
+                            display0.innerHTML = displayFormat( timers[ i ].getTimeLeft() );
+                        }
+                    }
+                    else if ( i === 1) {
+                        setCookie( "timer1", timers[ i ].endTime, 30 );
+                        if ( timers[ i ].getTimeLeft() <= 0 ) {
+                            display1.style.color = 'red';
+                            display1.innerHTML = '00:00';
+                        }
+                        else if ( timers[ i ].getTimeLeft() < 60 ) {
+                            display1.style.color = 'yellow';
+                            display1.innerHTML = displayFormat( timers[ i ].getTimeLeft() );
+                        }
+                        else {
+                            display1.style.color = 'white';
+                            display1.innerHTML = displayFormat( timers[ i ].getTimeLeft() );
+                        }
+                    }
+                    else {
+                        timers[ i ].stopTimeout();
+                        timers.splice( i, 1 );
+                    }
+                }
+            }, timerDecrement );
+
+            function addTimer () {
+                const inputValueMin = Math.floor( parseInt( inputMinutes.value ) );
+                const inputValueSec = Math.floor( parseInt( inputSeconds.value ) );
+                setCookie( 'input-minutes', inputValueMin, 30 );
+                setCookie( 'input-seconds', inputValueSec, 30 );
+
+                if ( timers.length < 2 || timers[ 1 ].getTimeLeft() <= 0 ) {
+                    playAudioSfx( CLICK_AUDIO );
+                    const calculatedTotalTime = ( inputValueMin * 60 * 1000 ) + ( inputValueSec * 1000 );
+                    const newTimer = new Timer( calculatedTotalTime );
+                    timers.unshift( newTimer );
+                }
+                else if ( timers.length < 2 || timers[ 0 ].getTimeLeft() <= 0) {
+                    playAudioSfx( CLICK_AUDIO );
+                    const calculatedTotalTime = ( inputValueMin * 60 * 1000 ) + ( inputValueSec * 1000 );
+                    const newTimer = new Timer( calculatedTotalTime );
+                    timers[ 0 ] = newTimer;
+                }
+                else {
+                    playAudioSfx( ERROR_AUDIO );
+                    console.log( `Can't start new timer, both are already running.` );
+                }
+            }
+
+            function increaseTimer( index, value = 10000 ) {
+                console.log( 'increaseTimer', index, value );
+                try{
+                    timers[ index ].increaseTimer( value );
+                }
+                catch( e ) {
+                    console.warn( 'timer not found ', index, e );
+                }
+            }
+
+            function decreaseTimer( index, value = 10000 ) {
+                console.log( 'decreaseTimer', index, value );
+                try{
+                    timers[ index ].decreaseTimer( value);
+                }
+                catch( e ) {
+                    console.warn( 'timer not found ', index, e );
+                }
+                
+            } 
+
+            /**
+             * Convert number to a string for mm:ss
+             */
+            function displayFormat( totalMilliseconds ) {
+                // Adding 1000ms to round up
+                const totalSeconds = Math.floor( ( totalMilliseconds + 1000 ) / 1000 ); 
+                const totalMinutes = Math.floor( totalSeconds / 60 );
+
+                let seconds = totalSeconds % 60;
+                let minutes = totalMinutes % 60;
+
+                if ( seconds < 10 ) {
+                    seconds = `0${seconds}`;
+                }
+                if ( minutes < 10 ) {
+                    minutes = `0${minutes}`;
+                }
+                return `${minutes}:${seconds}`;
+            }
+
+            function setAlarmSrc( src ) {
+                console.log( 'setAlarmSrc', src );
+                if ( src ) {
+                    audioSrc = src;
+                    lastAudioSrc = src;
+                }
+                else {                        
+                    audioSrc = inputAudioSrc.value;
+                    lastAudioSrc = audioSrc;
+                }
+                playAlarm();
+                setCookie( 'alarm-src', audioSrc, 30 );
+            }
+
+            function link( url ) {
+                window.open( url, '_self' );
+            }
+
+            let timerIdSetter = 0;
+
+            class Timer {
+                
+                constructor( timeoutMilliseconds ) {
+                    console.log( 'timeoutMilliseconds', timeoutMilliseconds );
+                    this.id = timerIdSetter;
+                    timerIdSetter++;     
+                    this.endTime = Date.now() + timeoutMilliseconds;
+                    this.timeout;
+                    this.startTimeout( timeoutMilliseconds )
+                }
+
+                startTimeout( timeoutMilliseconds ) {                    
+                    console.log( 'timeoutMilliseconds', timeoutMilliseconds );
+                    this.playState = true;
+                    this.timeout = setTimeout( () => {
+                        playAlarm();
+                        console.log( 'Timer finnished: ', this.id );
+                    }, timeoutMilliseconds );
+                }
+
+                stopTimeout() {
+                    clearTimeout( this.timeout );
+                    this.setPlayState( false );
+                    console.log( 'stopped ', this.id );
+                }
+
+                increaseTimer( value ) { 
+                    if ( value ) {
+                        clearTimeout( this.timeout );
+                        this.endTime += value;
+                        console.log( 'this.endTime', this.endTime, value);
+                        const newTimeoutMilliseconds = this.endTime - Date.now();
+                        console.log( 'newTimeoutMilliseconds', newTimeoutMilliseconds );
+                        setTimeout( () => {
+                            this.startTimeout( newTimeoutMilliseconds - 1 );
+                        }, 1 );
+                    }
+                    else {
+                        console.log( 'value undefined' );
+                    }
+                }
+
+                decreaseTimer( value ) { 
+                    if ( value ) {
+                        clearTimeout( this.timeout );
+                        this.endTime -= value;
+                        console.log( 'this.endTime', this.endTime, value );
+                        const newTimeoutMilliseconds = this.endTime - Date.now();
+                        console.log( 'newTimeoutMilliseconds', newTimeoutMilliseconds );
+                        setTimeout( () => {
+                            this.startTimeout( newTimeoutMilliseconds - 1 );
+                        }, 1 );
+                    }
+                    else {
+                        console.log( 'value undefined' );
+                    }
+                }
+
+                setPlayState( bool ) {
+                    this.playState = bool || !this.playState;
+                }
+
+                /**
+                 * Get's the time left in milliseconds
+                 * @return {number} milliseconds
+                 */
+                getTimeLeft() {
+                    return this.endTime - Date.now();
+                }
+            }
+        </script>
+    </body>
+</html>

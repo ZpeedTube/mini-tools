@@ -24,7 +24,31 @@ button.btnBack {
     line-height:0.8rem;
 }
 
+input {
+    text-align: center;
+}
 
 * {
     margin-bottom: 0.8rem;
+}
+
+.cookie {
+    display: none;
+    background: #555;
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    padding: 0.5rem;
+    font-size: 1.5rem;
+    transform: translate( -50%, 0 );    
+}
+
+.cookie button {
+    position: relative;
+    background: rgb(10, 97, 10);
+    min-width: 5rem;
+    padding: 0.8rem;
+    margin: auto;
+    left: 50%;
+    transform: translate( -50%, 0 ); 
 }
