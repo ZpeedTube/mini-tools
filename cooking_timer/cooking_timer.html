@@ -143,7 +143,7 @@
                             display0.style.color = 'red';
                             display0.innerHTML = '00:00';
                         }
-                        else if ( timers[ i ].getTimeLeft() < 60 ) {
+                        else if ( timers[ i ].getTimeLeft() < 60 * 1000 ) {
                             display0.style.color = 'yellow';
                             display0.innerHTML = displayFormat( timers[ i ].getTimeLeft() );
                         }
@@ -158,7 +158,7 @@
                             display1.style.color = 'red';
                             display1.innerHTML = '00:00';
                         }
-                        else if ( timers[ i ].getTimeLeft() < 60 ) {
+                        else if ( timers[ i ].getTimeLeft() < 60 * 1000 ) {
                             display1.style.color = 'yellow';
                             display1.innerHTML = displayFormat( timers[ i ].getTimeLeft() );
                         }
