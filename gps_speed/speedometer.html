@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0e13">
+<title>Speed</title>
+<style>
+  :root {
+    --bg: #0b0e13;
+    --panel: #111620;
+    --line: #1e2633;
+    --amber: #ffb454;
+    --amber-dim: #7a5526;
+    --text: #e8e4da;
+    --muted: #6b7484;
+    --danger: #ff6b5e;
+    --mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
+    --display: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ---------- top status bar ---------- */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px 10px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  button.btnBack {
+    font-family: var(--mono);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--muted);
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  button.btnBack:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  #fix {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  #fix-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  #fix-dot.ok   { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  #fix-dot.bad  { background: var(--danger); }
+  @media (prefers-reduced-motion: no-preference) {
+    #fix-dot.wait { animation: blink 1.1s infinite; }
+    @keyframes blink { 50% { opacity: 0.25; } }
+  }
+
+  /* ---------- gauge ---------- */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 0;
+  }
+  #gauge-wrap {
+    position: relative;
+    width: min(86vw, 52vh);
+    aspect-ratio: 1;
+  }
+  svg { width: 100%; height: 100%; display: block; }
+  .arc-track { stroke: var(--line); }
+  .arc-fill  { stroke: var(--amber); transition: stroke-dashoffset 0.35s ease-out; }
+
+  #readout {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  #speed {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(72px, 26vw, 160px);
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+  #speed.stale { color: var(--muted); }
+  #unit {
+    margin-top: 6px;
+    font-size: 14px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  #unit-hint {
+    margin-top: 4px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ---------- stats row ---------- */
+  #stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: 100%;
+    border-top: 1px solid var(--line);
+  }
+  .stat {
+    padding: 16px 8px 20px;
+    text-align: center;
+    border-right: 1px solid var(--line);
+  }
+  .stat:last-child { border-right: none; }
+  .stat .label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .stat .value {
+    font-size: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- overlay states ---------- */
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: var(--bg);
+    padding: 32px;
+    text-align: center;
+    z-index: 10;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: 0.04em;
+  }
+  #overlay p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 320px;
+  }
+  button#start {
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--amber);
+    color: #14100a;
+    border: none;
+    border-radius: 999px;
+    padding: 16px 40px;
+    cursor: pointer;
+  }
+  button#start:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="btnBack" id="back" aria-label="Back to Mini Tools">&#60;</button>
+  <span id="fix"><span id="fix-dot"></span><span id="fix-text">No signal</span></span>
+  <span id="acc">±– m</span>
+</header>
+
+<main>
+  <div id="overlay">
+    <h1>GPS Speedometer</h1>
+    <p>Uses your phone's GPS to show live speed. Location stays on your device — nothing is sent anywhere.</p>
+    <button id="start">Start</button>
+    <p id="overlay-err" style="color:var(--danger)"></p>
+  </div>
+
+  <div id="gauge-wrap">
+    <svg viewBox="0 0 200 200">
+      <circle class="arc-track" cx="100" cy="100" r="90" fill="none" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="424 565" transform="rotate(135 100 100)"/>
+      <circle id="arc" class="arc-fill" cx="100" cy="100" r="90" fill="none" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="424 565" stroke-dashoffset="424"
+              transform="rotate(135 100 100)"/>
+    </svg>
+    <div id="readout" role="button" aria-label="Change unit" tabindex="0">
+      <div id="speed">0</div>
+      <div id="unit">km/h</div>
+      <div id="unit-hint">tap to change unit</div>
+    </div>
+  </div>
+</main>
+
+<div id="stats">
+  <div class="stat"><div class="label">Max</div><div class="value" id="max">0</div></div>
+  <div class="stat"><div class="label">Avg (moving)</div><div class="value" id="avg">0</div></div>
+  <div class="stat"><div class="label">Distance</div><div class="value" id="dist">0.0</div></div>
+</div>
+
+<script>
+(() => {
+  const UNITS = [
+    { name: 'km/h', factor: 3.6,     gaugeMax: 160, distDiv: 1000,    distUnit: 'km' },
+    { name: 'mph',  factor: 2.23694, gaugeMax: 100, distDiv: 1609.34, distUnit: 'mi' },
+    { name: 'm/s',  factor: 1,       gaugeMax: 45,  distDiv: 1000,    distUnit: 'km' },
+    { name: 'kn',   factor: 1.94384, gaugeMax: 90,  distDiv: 1852,    distUnit: 'nmi' },
+  ];
+  let unitIdx = 0;
+
+  const el = id => document.getElementById(id);
+  const speedEl = el('speed'), unitEl = el('unit'), arcEl = el('arc');
+  const maxEl = el('max'), avgEl = el('avg'), distEl = el('dist'), accEl = el('acc');
+  const fixDot = el('fix-dot'), fixText = el('fix-text');
+
+  const ARC_LEN = 424; // dasharray length of the 270° arc
+
+  let speedMs = 0;            // current speed, m/s
+  let maxMs = 0;
+  let distM = 0;              // total distance, meters
+  let movingTime = 0;         // seconds spent above threshold
+  let movingDist = 0;
+  let segSpeed = 0;           // speed over the last accepted segment — the fallback when the device reports none
+  let lastFix = null;         // previous fix — for gap detection and moving-time
+  let anchor = null;          // last position accepted into the distance total
+  let watchId = null;
+  let wakeLock = null;         // held so the sentinel isn't garbage-collected while running
+  let staleTimer = null;
+
+  const MOVING_THRESHOLD = 0.7; // m/s (~2.5 km/h) — below this, treat as standing still / GPS jitter
+  const MAX_ACCURACY = 35;      // m — fixes worse than this can't be trusted for speed or distance
+  const MAX_GAP = 15;           // s — a longer gap means lost signal, so don't bridge it
+
+  function haversine(a, b) {
+    const R = 6371000, rad = Math.PI / 180;
+    const dLat = (b.latitude - a.latitude) * rad;
+    const dLon = (b.longitude - a.longitude) * rad;
+    const s = Math.sin(dLat/2)**2 +
+      Math.cos(a.latitude*rad) * Math.cos(b.latitude*rad) * Math.sin(dLon/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+
+  function render() {
+    const u = UNITS[unitIdx];
+    const v = speedMs * u.factor;
+    speedEl.textContent = v.toFixed(1);
+    unitEl.textContent = u.name;
+    maxEl.textContent = Math.round(maxMs * u.factor);
+    avgEl.textContent = movingTime > 2 ? Math.round((movingDist / movingTime) * u.factor) : 0;
+    distEl.textContent = (distM / u.distDiv).toFixed(1) + ' ' + u.distUnit;
+    const frac = Math.min(v / u.gaugeMax, 1);
+    arcEl.style.strokeDashoffset = ARC_LEN * (1 - frac);
+  }
+
+  function markStale() {
+    speedMs = 0;
+    segSpeed = 0;
+    render();
+    speedEl.classList.add('stale');
+    fixDot.className = 'wait';
+    fixText.textContent = 'Waiting…';
+  }
+
+  function onPosition(pos) {
+    const c = pos.coords;
+    const now = pos.timestamp;
+    const fix = { c: { latitude: c.latitude, longitude: c.longitude }, t: now };
+    const usable = c.accuracy <= MAX_ACCURACY;
+    const gap = lastFix ? (now - lastFix.t) / 1000 : 0;
+
+    if (!usable || gap > MAX_GAP) anchor = null; // lost or untrustworthy — don't bridge the gap
+
+    // Distance and the speed fallback both measure from the last accepted position rather than
+    // the previous fix: a step only counts once it clears the error radius, so jitter can't
+    // register as movement, and slow travel still adds up over however many fixes it takes.
+    let liveSpeed = 0;
+    if (usable) {
+      if (!anchor) {
+        anchor = fix;
+      } else {
+        const d = haversine(anchor.c, c);
+        const dt = (now - anchor.t) / 1000;
+        if (dt > 0) liveSpeed = d / dt;
+        if (d > c.accuracy) { // cleared the noise floor — a real step
+          distM += d;
+          segSpeed = liveSpeed;
+          anchor = fix;
+        }
+      }
+    }
+
+    // Prefer the device's own speed; it's the only reliable source at low speed.
+    let s = c.speed;
+    if (s === null || isNaN(s)) {
+      // Fall back to the last measured segment, capped by the live anchor ratio — that ratio
+      // decays towards zero once you stop moving, so a stale segment speed can't stick.
+      s = Math.min(segSpeed, liveSpeed);
+    }
+    if (s < MOVING_THRESHOLD) s = 0; // clamp GPS jitter while standing
+
+    if (s >= MOVING_THRESHOLD && gap > 0 && gap < MAX_GAP) {
+      movingTime += gap;
+      movingDist += s * gap;
+    }
+
+    speedMs = s;
+    if (s > maxMs) maxMs = s;
+    lastFix = fix;
+
+    accEl.textContent = '±' + Math.round(c.accuracy) + ' m';
+    speedEl.classList.remove('stale');
+    if (c.accuracy <= 20) { fixDot.className = 'ok'; fixText.textContent = 'GPS fix'; }
+    else { fixDot.className = 'wait'; fixText.textContent = 'Weak fix'; }
+
+    render();
+
+    clearTimeout(staleTimer);
+    staleTimer = setTimeout(markStale, 5000);
+  }
+
+  function onError(err) {
+    clearTimeout(staleTimer); // else a pending stale timer overwrites the error status
+    fixDot.className = 'bad';
+    fixText.textContent = err.code === 1 ? 'Permission denied' : 'No signal';
+    if (err.code === 1) {
+      el('overlay').classList.remove('hidden');
+      el('overlay-err').textContent =
+        'Location permission was denied. Enable it for this site in your browser settings, then tap Start again.';
+    }
+  }
+
+  // Keep the screen awake while the speedo is running
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (_) { /* best-effort */ }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && watchId !== null) requestWakeLock();
+  });
+
+  function start() {
+    if (!('geolocation' in navigator)) {
+      el('overlay-err').textContent = 'Geolocation is not available in this browser.';
+      return;
+    }
+    if (!window.isSecureContext) {
+      el('overlay-err').textContent =
+        'This page must be served over HTTPS (or localhost) for GPS access.';
+      return;
+    }
+    el('overlay').classList.add('hidden');
+    fixDot.className = 'wait';
+    fixText.textContent = 'Acquiring…';
+
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId); // don't stack watchers on retry
+    watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000,
+    });
+
+    requestWakeLock();
+  }
+
+  function cycleUnit() {
+    unitIdx = (unitIdx + 1) % UNITS.length;
+    render();
+  }
+
+  el('start').addEventListener('click', start);
+  el('back').addEventListener('click', () => window.open('../index.html', '_self'));
+  el('readout').addEventListener('click', cycleUnit);
+  el('readout').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cycleUnit(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
